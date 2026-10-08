@@ -1,0 +1,19 @@
+# Fail closed: only reviewed project files may be added to Git.
+# Session JSON, MAC inventories, local scripts, binaries, and future local
+# artifacts stay ignored. Review new files before adding an exception.
+/*
+!/.gitignore
+!/AGENTS.md
+!/README.md
+!/go.mod
+!/go.sum
+!/main.go
+!/main_test.go
+!/portal.go
+!/portal_test.go
+!/scan.go
+!/scan_test.go
+!/scan_darwin.go
+!/scan_darwin_test.go
+!/scan_linux.go
+!/scan_linux_test.go
