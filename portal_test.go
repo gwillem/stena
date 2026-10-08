@@ -96,9 +96,27 @@ func TestSessionLine(t *testing.T) {
 		IsAuthOpen:             true,
 		AuthOpenKeyword:        "free",
 	}
-	want = "020000000002 free 0.05GB " + formatLocal(t, "2030-02-01T00:00:00Z") + " OFFLINE"
+	want = "020000000002 free     0.05GB " + formatLocal(t, "2030-02-01T00:00:00Z") + " OFFLINE"
 	if got := offline.Line("020000000002"); got != want {
 		t.Errorf("offline: got %q, want %q", got, want)
+	}
+}
+
+func TestSessionLineVoucherWidth(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		s    Session
+		want string
+	}{
+		{"short code", Session{IsAuthVoucher: true, AuthVoucherCode: "TEST"}, "020000000001 TEST     - -"},
+		{"eight characters", Session{IsAuthVoucher: true, AuthVoucherCode: "TEST0001"}, "020000000001 TEST0001 - -"},
+		{"absent", Session{}, "020000000001 -        - -"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.s.Line("020000000001"); got != tt.want {
+				t.Errorf("session line: got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

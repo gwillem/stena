@@ -219,10 +219,11 @@ func (s *Session) Expiry() string {
 	return t.Local().Format("2006-01-02 15:04")
 }
 
-// Line returns a one-line summary of the session for a MAC address, with an
-// "OFFLINE" marker when fewer clients are connected than the session allows.
+// Line returns a one-line summary with a left-aligned voucher column at least
+// eight characters wide. It adds "OFFLINE" when fewer clients are connected than
+// the session allows.
 func (s *Session) Line(mac string) string {
-	line := fmt.Sprintf("%s %s %s %s", mac, s.Voucher(), s.DataUsed(), s.Expiry())
+	line := fmt.Sprintf("%s %-8s %s %s", mac, s.Voucher(), s.DataUsed(), s.Expiry())
 	if s.Offline() {
 		line += " OFFLINE"
 	}
