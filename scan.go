@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,13 +11,31 @@ import (
 	"strings"
 )
 
-type scanCommand struct{}
+type scanCommand struct {
+	Positional struct {
+		MACs []scanMAC `positional-arg-name:"mac" description:"scan only these MAC addresses (12 hexadecimal digits each)"`
+	} `positional-args:"yes"`
+}
 
-// Execute prints sessions for unique MAC addresses in the active device's ARP
-// cache, followed by total active clients and traffic. Sessions are saved to
-// <mac>.json in the working directory. Empty files mark missing sessions.
-// Discovery and lookup progress is written to stderr.
-func (*scanCommand) Execute([]string) error {
+type scanMAC string
+
+// UnmarshalFlag parses a compact six-byte MAC address.
+func (m *scanMAC) UnmarshalFlag(value string) error {
+	var address [6]byte
+	if len(value) != 12 {
+		return fmt.Errorf("invalid MAC address %q: expected 12 hexadecimal digits", value)
+	}
+	if _, err := hex.Decode(address[:], []byte(value)); err != nil {
+		return fmt.Errorf("invalid MAC address %q: %w", value, err)
+	}
+	*m = scanMAC(strings.ToLower(value))
+	return nil
+}
+
+// Execute discovers the portal and prints sessions for the requested MACs or
+// unique MAC addresses in the active device's ARP cache. Sessions are saved to
+// <mac>.json in the working directory. Progress is written to stderr.
+func (c *scanCommand) Execute([]string) error {
 	fmt.Fprintln(os.Stderr, "Finding default gateway...")
 	device, gateway, err := Device()
 	if err != nil {
@@ -27,6 +46,18 @@ func (*scanCommand) Execute([]string) error {
 	info, err := Detect(gateway)
 	if err != nil {
 		return err
+	}
+
+	return c.scanSessions(device, info)
+}
+
+func (c *scanCommand) scanSessions(device string, info Info) error {
+	if len(c.Positional.MACs) != 0 {
+		for _, address := range c.Positional.MACs {
+			mac := string(address)
+			lookup(mac, info.ZoneID, mac == info.Mac)
+		}
+		return nil
 	}
 
 	fmt.Fprintf(os.Stderr, "Checking ARP cache on %s (own MAC %s)...\n", device, info.Mac)
@@ -44,6 +75,9 @@ func (*scanCommand) Execute([]string) error {
 			continue
 		}
 		seen[mac] = true
+		if cached, err := os.Stat(mac + ".json"); err == nil && cached.Size() == 0 {
+			continue
+		}
 		if s := lookup(mac, info.ZoneID, mac == info.Mac); s != nil {
 			clients += s.ConnectedClients
 			if s.BytesUsed != nil {
@@ -76,14 +110,9 @@ func parseMAC(s string) ([6]byte, error) {
 }
 
 // lookup fetches the session of a MAC address, prints it, saves it to
-// <mac>.json and returns it. A MAC whose existing <mac>.json file is empty is
-// known to have no session and is skipped; a MAC without a session only gets
-// such an empty marker file and prints nothing. Both return nil.
+// <mac>.json and returns it. A MAC without a session gets an empty marker file
+// and prints nothing.
 func lookup(mac, zoneID string, me bool) *Session {
-	if info, err := os.Stat(mac + ".json"); err == nil && info.Size() == 0 {
-		return nil
-	}
-
 	body, err := FetchSession(mac, zoneID)
 	if errors.Is(err, ErrNoSession) {
 		if err := os.WriteFile(mac+".json", nil, 0o644); err != nil {

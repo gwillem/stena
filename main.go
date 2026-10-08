@@ -86,8 +86,8 @@ func runCLI(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if _, err := parser.AddCommand("scan", "Show sessions for clients in the ARP cache",
-		"Discover the captive portal, save session JSON in the working directory, and print session and traffic summaries.", &scanCommand{}); err != nil {
+	if _, err := parser.AddCommand("scan", "Show sessions for MAC addresses or clients in the ARP cache",
+		"Discover the captive portal and save session JSON in the working directory. With MAC addresses, print only their sessions; otherwise scan the ARP cache and print traffic totals.", &scanCommand{}); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}

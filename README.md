@@ -12,6 +12,20 @@ stena scan
 stena login <voucher>
 ```
 
+To query specific MAC addresses directly, pass one or more addresses using
+12 hexadecimal digits each:
+
+```sh
+stena scan 020000000002 020000000003
+cat mac | xargs stena scan
+```
+
+This skips ARP discovery and checks the API even if an empty cache file exists.
+Stdout contains one session line per registered address, in argument order.
+Unregistered addresses produce no output. There is no totals line.
+Portal discovery progress still goes to stderr. With no MAC arguments,
+`stena scan` scans the ARP cache as above.
+
 ```
 ❯ stena scan
 Finding default gateway...
