@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -16,23 +15,27 @@ type scanCommand struct{}
 // Execute prints sessions for unique MAC addresses in the active device's ARP
 // cache, followed by total active clients and traffic. Sessions are saved to
 // <mac>.json in the working directory. Empty files mark missing sessions.
+// Discovery and lookup progress is written to stderr.
 func (*scanCommand) Execute([]string) error {
+	fmt.Fprintln(os.Stderr, "Finding default gateway...")
 	device, gateway, err := Device()
 	if err != nil {
 		return err
 	}
-	log.Printf("scanning device %s via gateway %s", device, gateway)
+	fmt.Fprintf(os.Stderr, "Finding own MAC via gateway %s on %s...\n", gateway, device)
 
 	info, err := Detect(gateway)
 	if err != nil {
 		return err
 	}
 
+	fmt.Fprintf(os.Stderr, "Checking ARP cache on %s (own MAC %s)...\n", device, info.Mac)
 	macs, err := arpMACs(device)
 	if err != nil {
 		return err
 	}
 
+	fmt.Fprintf(os.Stderr, "Checking portal sessions (ARP entries: %d)...\n", len(macs))
 	var clients int
 	var used int64
 	seen := make(map[string]bool)

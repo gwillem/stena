@@ -1,50 +1,42 @@
-# stena
+# Stenaline Wifi Scanner
 
-A Go CLI for the Nowhere Networks captive portal used on Stena ferries.
-The module is `github.com/gwillem/stena`; all Go code is in the root `main` package.
-Supported platforms: macOS and Linux.
+Scan for wifi vouchers and register using an unused voucher.
 
 ## Usage
 
+Connect to the `Internet@Sea` network and wait a few minutes. Then run:
+
 ```sh
-go run . login VOUCHER
-go run . login --logout-oldest VOUCHER
-go run . scan
-go run . -v scan
+go install github.com/gwillem/stena@latest
+stena scan
+stena login <voucher>
 ```
 
-`login` discovers the portal through the default gateway, authenticates with the
-voucher, completes access-controller authentication, and prints the session.
-`--logout-oldest` permits logging out the client already using the voucher.
-
-`scan` queries unique MAC addresses already in the active interface's ARP cache.
-It prints the MAC, voucher or open-access keyword, decimal gigabytes used, and
-local expiry time. `OFFLINE` means fewer clients are connected than the session
-allows; `<=== ME` identifies this client. The final line totals connected clients
-and traffic.
-
-Sessions are saved as `<mac>.json` in the working directory. Empty JSON files
-mark missing sessions and prevent repeat lookups. Remove an empty marker to
-query that MAC again. macOS requires `arp`; Linux requires `ip` from iproute2.
-Use `-v` or `--verbose` for diagnostics on stderr.
-
-## Privacy and Git
-
-Session output and JSON may contain voucher codes and device identifiers.
-Do not publish them. Fixtures use synthetic MACs, documentation IP addresses,
-and a dummy voucher.
-
-`.gitignore` allows only the reviewed source, tests, module files, this README,
-and `AGENTS.md`. Local session JSON, the `mac` inventory, legacy Python scripts,
-and compiled binaries remain ignored. Review each new file before adding an
-allowlist exception. Do not force-add local artifacts.
-
-## Checks
-
-```sh
-go mod tidy
-gofumpt -w *.go
-go fix ./...
-golangci-lint run ./...
-go test ./...
+```
+❯ stena scan
+Finding default gateway...
+Finding own MAC via gateway 192.0.2.1 on en0...
+Checking ARP cache on en0 (own MAC 020000000001)...
+Checking portal sessions (ARP entries: 38)...
+020000000001 TEST-01 0.10GB 2030-01-02 12:00 <=== ME
+020000000002 TEST-02 0.10GB 2030-01-02 12:00
+020000000003 TEST-03 0.10GB 2030-01-02 12:00
+020000000004 TEST-04 0.10GB 2030-01-02 12:00
+020000000005 TEST-05 0.10GB 2030-01-02 12:00
+020000000006 TEST-06 0.10GB 2030-01-02 12:00
+020000000007 TEST-07 0.10GB 2030-01-02 12:00
+020000000008 TEST-08 0.10GB 2030-01-02 12:00
+020000000009 TEST-09 0.10GB 2030-01-02 12:00
+02000000000a TEST-10 0.10GB 2030-01-02 12:00
+02000000000b TEST-11 0.10GB 2030-01-02 12:00
+02000000000c TEST-12 0.10GB 2030-01-02 12:00
+02000000000d TEST-13 0.10GB 2030-01-02 12:00
+02000000000e TEST-14 0.10GB 2030-01-02 12:00
+02000000000f TEST-15 0.10GB 2030-01-02 12:00
+020000000010 TEST-16 0.10GB 2030-01-02 12:00
+020000000011 TEST-17 0.10GB 2030-01-02 12:00
+020000000012 TEST-18 0.10GB 2030-01-02 12:00
+020000000013 TEST-19 0.10GB 2030-01-02 12:00
+020000000014 TEST-20 0.10GB 2030-01-02 12:00
+20 active clients, 2.00GB traffic
 ```
